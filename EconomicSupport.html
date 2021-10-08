@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<text> Responsiveness of Covid-19 Related Policies in UK (Economic Support)</text>
+<!-- Load d3.js -->
+<script src="https://d3js.org/d3.v6.js"></script>
+
+<!-- Create a div where the graph will take place -->
+<div id="chart"></div>
+
+<script>
+
+// set the dimensions and margins of the graph
+const margin = {top: 10, right: 30, bottom: 30, left: 60},
+        width = 460 - margin.left - margin.right,
+        height = 400 - margin.top - margin.bottom;
+
+// append the svg object to the body of the page
+const svg = d3.select("#chart")
+    .append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+    .append("g")
+    .attr("transform", `translate(${margin.left}, ${margin.top})`);
+
+//Read the data
+d3.csv("oxford_policy_uk.csv", function(d){
+  return {
+      //Step 1
+    newcases: +d['NewCasesByDay'],
+      //Step 2
+    economicsupport: +d['EconomicSupportIndex'],
+      //Step 3
+    containmenthealth: +d['ContainmentHealthIndex'],
+      //Step 4
+    governmentresponse: +d["GovernmentResponseIndex"],
+      // Step 5
+    regionname: d["RegionName"],
+      //Step 6
+    date: d["Date"],
+      //Step 7
+    stringency: +d["StringencyIndex"],
+      //Step 6
+    stringencylegacy: +d["StringencyLegacyIndex"],
+
+
+  };
+}).then( function(data) {
+
+    // Add X axis
+    const x = d3.scaleLinear()
+    //.domain([0, d3.max(data, d => d.newcases)])
+        .domain([0, 60000])
+    .range([ 0, width ]);
+
+    // Step #2: Add Color
+    var color = d3.scaleOrdinal()
+    .domain(data.map(d => d.regionname))
+    .range(d3.schemeSet3)
+
+    // Step 4: Add a tooltip
+    var tooltip = d3.select("#chart")
+      .append("div")
+    .style("position", "absolute")
+    .style("visibility", "hidden")
+
+    svg.append("g")
+    .attr("transform", `translate(0, ${height})`)
+    .call(d3.axisBottom(x));
+
+    // Add Y axis
+    const y = d3.scaleLinear()
+    .domain([0, d3.max(data, d => d.economicsupport)])
+    .range([ height, 0]);
+    svg.append("g")
+    .call(d3.axisLeft(y));
+
+    // Add dots
+    svg.append('g')
+    .selectAll("dot")
+    .data(data)
+    .join("circle")
+        .attr("cx", function (d) { return x(d.newcases); } )
+        .attr("cy", function (d) { return y(d.economicsupport); } )
+        //Step 3
+        //.attr("r", function (d) {return size(d.date)})
+        .attr("r", 3)
+        // Step 2
+        .style("fill", function(d) {return color(d.regionname)})
+        //.style("fill", "#69b3a2")
+        // Step 4
+        .on("mouseover", function(e, d) {return tooltip.style("visibility", "visible").html("RegionName: " + d.regionname + ", Economic Support: " + d.economicsupport);})
+        .on("mousemove", function(){return tooltip.style("top", d3.select(this).attr("cy")+"px").style("left",d3.select(this).attr("cx")+"px")})
+        .on("mouseout", function(){return tooltip.style("visibility", "hidden");})
+
+})
+</script>
+
+<text>X-Axis: New Covid-19 Cases, Y-Axis: Economic Support</text>
